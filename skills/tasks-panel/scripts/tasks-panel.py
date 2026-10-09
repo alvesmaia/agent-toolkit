@@ -379,6 +379,7 @@ class Board(App):
         return f"""
         Screen {{ background: {background}; }}
         #title {{ padding: 0 2; text-style: bold; color: {t.title}; }}
+        #path {{ padding: 0 2; color: {t.detail}; }}
         #summary {{ padding: 1 2 0 2; color: {t.summary}; }}
         Collapsible {{ border: none; background: transparent; }}
         CollapsibleTitle {{ color: {t.text}; text-style: bold; }}
@@ -401,6 +402,7 @@ class Board(App):
 
     def compose(self) -> ComposeResult:
         yield Label("", id="title")
+        yield Label("", id="path")
         yield Label("", id="summary")
 
         # VerticalScroll is focusable by default, so the first Down focused the
@@ -454,6 +456,11 @@ class Board(App):
             self.board.stem,
         )
         self.query_one("#title", Label).update(heading)
+
+        # The heading above can be any custom project name, so the board's
+        # own path stays on-screen right under it — otherwise, with several
+        # panels open, there's no way to tell which file a given one reads.
+        self.query_one("#path", Label).update(str(self.board))
 
         done = sum(s.done for s in sections if s.is_phase)
         total = sum(s.total for s in sections if s.is_phase)

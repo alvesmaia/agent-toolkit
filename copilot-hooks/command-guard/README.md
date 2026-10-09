@@ -38,7 +38,7 @@ Removes `command-guard.json` (only if it references `command-guard`) and moves
 | Tool | Checked |
 |---|---|
 | `powershell` | the command text; any `.ps1`, `.bat`, `.cmd` run from it (`.\x.ps1`, `& x.ps1`, `call x.bat`, `powershell -File x.ps1`) and any `.py` run with `python x.py`. Script contents are checked with the same rules. |
-| `apply_patch` | added lines of `.ps1`, `.psm1`, `.psd1`, `.py`, `.bat`, `.cmd` files, before the file is written. |
+| `apply_patch`, `create` | added lines (`apply_patch`) or `file_text` (`create`) of `.ps1`, `.psm1`, `.psd1`, `.py`, `.bat`, `.cmd` files, before the file is written. |
 | anything else | allowed. |
 
 Rules are in `rules.json`: `remote-exec`, `base64-exec`, `execution-policy`,
@@ -75,7 +75,7 @@ Comments are stripped before matching (full-line `#` and trailing ` #`).
   `exceptions`. Full-line comments and trailing comments are stripped.
 - `ask` is not used: the Copilot CLI hook reference documents `deny` only, and this hook
   never returns anything else.
-- Only `preToolUse` is used. Only the `powershell` and `apply_patch` tools were observed.
+- Only `preToolUse` is used. Observed tools: `powershell`, `create`, `apply_patch`, `view`, `glob`. Other tools are allowed without checks.
 - Matching is on the text of the tool call. The hook does not stop the process started
   by an allowed command.
 - Hook crash denies every tool call. Keep `tests\run-tests.ps1` green after any edit to `guard.ps1`.

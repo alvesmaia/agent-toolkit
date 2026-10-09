@@ -58,5 +58,9 @@
   { "name": "apply_patch update adds blocked line", "tool": "apply_patch", "args": "*** Begin Patch\n*** Update File: C:/tmp/x.ps1\n@@\n-old\n+Set-MpPreference -DisableRealtimeMonitoring $true\n*** End Patch", "expect": "deny", "reason": "defender-tamper" },
   { "name": "apply_patch py subprocess powershell", "tool": "apply_patch", "args": "*** Begin Patch\n*** Add File: C:/tmp/x.py\n+import subprocess\n+subprocess.run(['powershell','-ep','bypass','-c','1'])\n*** End Patch", "expect": "deny", "reason": "python-exec" },
   { "name": "apply_patch py os.system cmd", "tool": "apply_patch", "args": "*** Begin Patch\n*** Add File: C:/tmp/x.py\n+import os\n+os.system('cmd /c dir')\n*** End Patch", "expect": "deny", "reason": "python-exec" },
-  { "name": "apply_patch bat with bypass", "tool": "apply_patch", "args": "*** Begin Patch\n*** Add File: C:/tmp/x.bat\n+powershell -ep bypass -c 1\n*** End Patch", "expect": "deny", "reason": "execution-policy" }
+  { "name": "create ps1 harmless allowed", "tool": "create", "args": { "path": "C:/tmp/ok.ps1", "file_text": "Write-Output ok" }, "expect": "allow" },
+  { "name": "create md mention ignored", "tool": "create", "args": { "path": "C:/tmp/notes.md", "file_text": "Set-MpPreference -DisableRealtimeMonitoring $true" }, "expect": "allow" },
+  { "name": "create ps1 Set-MpPreference", "tool": "create", "args": { "path": "C:/tmp/blocked.ps1", "file_text": "Set-MpPreference -DisableRealtimeMonitoring $true" }, "expect": "deny", "reason": "defender-tamper" },
+  { "name": "create py subprocess powershell", "tool": "create", "args": { "path": "C:/tmp/shell.py", "file_text": "import subprocess\nsubprocess.run([\"powershell\",\"-ep\",\"bypass\",\"-c\",\"1\"])" }, "expect": "deny", "reason": "python-exec" },
+  { "name": "apply_patch bat with bypass","tool": "apply_patch", "args": "*** Begin Patch\n*** Add File: C:/tmp/x.bat\n+powershell -ep bypass -c 1\n*** End Patch", "expect": "deny", "reason": "execution-policy" }
 ]

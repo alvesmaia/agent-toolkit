@@ -193,6 +193,14 @@ function Get-Decision($event, $rules) {
                 if ($fileHits.Count -gt 0) { return Format-Reason $fileHits[0] }
             }
         }
+        'create' {
+            $path = [string]$event.toolArgs.path
+            $ext = [IO.Path]::GetExtension($path).ToLowerInvariant()
+            if (@('.ps1', '.psm1', '.psd1', '.py', '.bat', '.cmd') -contains $ext) {
+                $hits = @(Get-Violations ([string]$event.toolArgs.file_text) $path $rules)
+                if ($hits.Count -gt 0) { return Format-Reason $hits[0] }
+            }
+        }
         'apply_patch' {
             $patch = Get-PatchText $event.toolArgs
             foreach ($file in @(Get-PatchFiles $patch)) {

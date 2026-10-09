@@ -15,6 +15,10 @@ One directory per skill, flat namespace, `kebab-case` names. Use a
 gerund (`writing-x`, `reviewing-x`) when the skill names a process;
 a plain noun phrase when it's a tool or reference.
 
+Hooks (non-skill automation) go under `copilot-hooks/<name>/`, with their own
+`README.md`, install/uninstall scripts and `tests/`. They are not skills and have
+no `SKILL.md`.
+
 ## `SKILL.md`
 
 - YAML frontmatter with `name` and `description`, nothing else required.

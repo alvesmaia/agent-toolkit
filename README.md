@@ -17,6 +17,14 @@ its folder there.
 |---|---|
 | [`tasks-panel`](skills/tasks-panel/) | A clickable progress panel for a multi-task plan tracked in `TASKS.md`, so the user can see status without asking. |
 
+## Hooks
+
+Hooks are not skills and live outside `skills/`:
+
+| Hook | What it does |
+|---|---|
+| [`command-guard`](copilot-hooks/command-guard/) | GitHub Copilot CLI `preToolUse` hook that denies commands and script writes matching patterns that trigger endpoint antivirus (`irm ... \| iex`, `-EncodedCommand`, `-ExecutionPolicy Bypass`, ...). Installs with a PowerShell script; see its README for limits. |
+
 ## Installing
 
 ### As a plugin (recommended)

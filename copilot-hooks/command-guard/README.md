@@ -79,6 +79,9 @@ Comments are stripped before matching (full-line `#` and trailing ` #`).
 - Matching is on the text of the tool call. The hook does not stop the process started
   by an allowed command.
 - Hook crash denies every tool call. Keep `tests\run-tests.ps1` green after any edit to `guard.ps1`.
+- The hook command passes `-ExecutionPolicy RemoteSigned` so a local `guard.ps1` runs under a
+  `Restricted` user or machine policy. Verified with a `-ExecutionPolicy Restricted` host and no
+  Group Policy keys. A policy set by Group Policy overrides the command-line flag and is untested.
 - Internal errors in `guard.ps1` are logged to `guard.log` and allowed (fail-open).
   Only unreadable or missing scripts are denied.
 - `guard.log` records every decision, including tool name and denied content (not allowed

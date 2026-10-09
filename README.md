@@ -35,7 +35,7 @@ itself as both the marketplace and the one plugin it offers
 Claude Code session:
 
 ```
-/plugin marketplace add alvesmaia/skills
+/plugin marketplace add alvesmaia/agent-toolkit
 /plugin install alvesmaia@alvesmaia-skills
 ```
 

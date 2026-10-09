@@ -1,0 +1,118 @@
+{
+  "rules": [
+    {
+      "id": "execution-policy",
+      "category": "execution-policy",
+      "severity": "high",
+      "enabled": true,
+      "scope": "line",
+      "pattern": "(?<![\\w-])-(?:ex|exe|exec\\w*|ep)(?![\\w-])\\s*:?\\s*(?:bypass|unrestricted)\\b|\\bSet-ExecutionPolicy\\b[^;|&\\n]*\\b(?:bypass|unrestricted)\\b",
+      "message": "ExecutionPolicy Bypass/Unrestricted is blocked. Run the script without bypassing the policy.",
+      "exceptions": []
+    },
+    {
+      "id": "encoded-command",
+      "category": "encoded-command",
+      "severity": "high",
+      "enabled": true,
+      "scope": "line",
+      "carrier": "\\b(?:powershell|pwsh)(?:\\.exe)?\\b",
+      "pattern": "(?<![\\w-])-(?:e|ec|enc|enco|encod|encode|encoded\\w*)(?![\\w-])",
+      "message": "-EncodedCommand is blocked. Pass the script as plain text or as a .ps1 file.",
+      "exceptions": []
+    },
+    {
+      "id": "defender-tamper",
+      "category": "defender-tamper",
+      "severity": "high",
+      "enabled": true,
+      "scope": "command",
+      "pattern": "Set-MpPreference\\b|Remove-MpPreference\\b|Add-MpPreference\\b[^;\\n]*-Exclusion|Disable-\\w*(?:Monitoring|Protection)\\w*\\b",
+      "message": "Changing Microsoft Defender settings is blocked. Do not modify antivirus configuration from the agent.",
+      "exceptions": []
+    },
+    {
+      "id": "remote-exec",
+      "category": "remote-exec",
+      "severity": "high",
+      "enabled": true,
+      "scope": "line",
+      "pattern": "\\b(?:irm|iwr|Invoke-RestMethod|Invoke-WebRequest|curl|wget)\\b[^|\\n]*\\|\\s*(?:iex|Invoke-Expression)\\b|\\b(?:iex|Invoke-Expression)\\b[^\\n]*\\b(?:irm|iwr|Invoke-RestMethod|Invoke-WebRequest|DownloadString|DownloadFile)\\b|\\.\\s*\\(\\s*(?:irm|iwr|Invoke-RestMethod|Invoke-WebRequest)\\b|&\\s*\\(\\s*(?:irm|iwr|Invoke-RestMethod|Invoke-WebRequest)\\b|\\[scriptblock\\]::Create\\(\\s*\\(?\\s*(?:irm|iwr|Invoke-RestMethod|Invoke-WebRequest)\\b|\\.DownloadString\\([^)]*\\)\\s*\\|\\s*(?:iex|Invoke-Expression)\\b",
+      "message": "Running remote script content directly is blocked. Download to a file, review it, then run it as a separate step.",
+      "exceptions": []
+    },
+    {
+      "id": "base64-exec",
+      "category": "base64-exec",
+      "severity": "high",
+      "enabled": true,
+      "scope": "multiline",
+      "pattern": "FromBase64String[\\s\\S]{0,500}?(?:\\biex\\b|Invoke-Expression|::Create\\s*\\()|(?:\\biex\\b|Invoke-Expression)[\\s\\S]{0,500}?FromBase64String",
+      "message": "Decoding Base64 and executing the result is blocked.",
+      "exceptions": []
+    },
+    {
+      "id": "invoke-expression",
+      "category": "invoke-expression",
+      "severity": "medium",
+      "enabled": true,
+      "scope": "command",
+      "pattern": "(?:Invoke-Expression|iex)(?![\\w-])",
+      "message": "Invoke-Expression / iex is blocked. Call the command directly instead of building it as a string.",
+      "exceptions": []
+    },
+    {
+      "id": "scheduled-task",
+      "category": "scheduled-task",
+      "severity": "medium",
+      "enabled": true,
+      "scope": "line",
+      "pattern": "\\bschtasks(?:\\.exe)?\\s+/create\\b|\\b(?:Register|New)-ScheduledTask\\b",
+      "message": "Creating scheduled tasks is blocked.",
+      "exceptions": []
+    },
+    {
+      "id": "alt-interpreter",
+      "category": "alt-interpreter",
+      "severity": "medium",
+      "enabled": true,
+      "scope": "line",
+      "pattern": "(?<![\\w.-])(?:mshta|wscript|cscript)(?:\\.exe)?(?![\\w.-])|\\brundll32(?:\\.exe)?\\b[^\\n]*javascript",
+      "message": "Running scripts through mshta, wscript, cscript or rundll32 is blocked.",
+      "exceptions": []
+    },
+    {
+      "id": "obfuscation",
+      "category": "obfuscation",
+      "severity": "high",
+      "enabled": true,
+      "scope": "line",
+      "pattern": "\\bi[`'\"+ ]+e[`'\"+ ]*x\\b|\\bi[`'\"+ ]*e[`'\"+ ]+x\\b|\\bi['\"]\\s*\\+\\s*['\"]\\s*ex\\b",
+      "message": "Obfuscated Invoke-Expression/iex is blocked.",
+      "exceptions": []
+    },
+    {
+      "id": "python-exec",
+      "category": "python-exec",
+      "severity": "high",
+      "enabled": true,
+      "scope": "python-call",
+      "carrier": "\\b(?:powershell|pwsh|cmd|mshta|wscript|cscript|schtasks|rundll32)\\b",
+      "pattern": "\\b(?:subprocess\\.(?:run|Popen|call|check_output|check_call|getoutput|getstatusoutput)|os\\.(?:system|popen|exec\\w*|spawn\\w*)|pty\\.spawn)\\b",
+      "message": "Python subprocess/os call that runs a shell or a blocked pattern is blocked.",
+      "exceptions": []
+    },
+    {
+      "id": "download-then-run",
+      "category": "download-then-run",
+      "severity": "high",
+      "enabled": true,
+      "scope": "download-then-run",
+      "pattern": "\\b(?:Invoke-WebRequest|Invoke-RestMethod|iwr|irm|curl|wget|DownloadFile|urlretrieve|Start-BitsTransfer|certutil)\\b",
+      "outfile": "(?:-(?:OutFile|Destination|Out|o|O)\\s+['\"]?|DownloadFile\\([^,]+,\\s*['\"]|urlretrieve\\([^,]+,\\s*['\"])([^'\"\\s;|),]+)",
+      "execExtensions": [".ps1", ".bat", ".cmd", ".exe", ".msi", ".vbs", ".js", ".hta", ".py", ".jar"],
+      "message": "A file that was downloaded and then executed is blocked. Review its content in a separate step first.",
+      "exceptions": []
+    }
+  ]
+}

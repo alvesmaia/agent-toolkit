@@ -13,9 +13,7 @@ its folder there.
 
 ## Skills
 
-| Skill | What it's for |
-|---|---|
-| [`tasks-panel`](skills/tasks-panel/) | A clickable progress panel for a multi-task plan tracked in `TASKS.md`, so the user can see status without asking. |
+No skills are published in this repo right now.
 
 ## Hooks
 
@@ -62,9 +60,9 @@ exposes, e.g. `/alvesmaia:<command>` instead of the repo's own name.
 Copy (or symlink) the skill's directory into your skills folder:
 
 ```bash
-cp -r skills/tasks-panel ~/.claude/skills/tasks-panel
+cp -r skills/<skill-name> ~/.claude/skills/<skill-name>
 # or, to keep it in sync with this repo:
-ln -s "$(pwd)/skills/tasks-panel" ~/.claude/skills/tasks-panel
+ln -s "$(pwd)/skills/<skill-name>" ~/.claude/skills/<skill-name>
 ```
 
 **Note the installed path of any script**: scripts live under

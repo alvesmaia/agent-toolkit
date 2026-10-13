@@ -18,10 +18,14 @@ Installs to `$COPILOT_HOME\hooks` (default `%USERPROFILE%\.copilot\hooks`):
 - `command-guard\guard.ps1`, `command-guard\rules.json`
 - `command-guard.json` (hook config, only this file of yours is written)
 
-Re-running is a no-op when nothing changed. If the config differs, the old one is
-copied to `command-guard.json.bak-<timestamp>` first. If you edited `rules.json`, it is
-kept and the latest defaults are written to `rules.default.json`. Restart Copilot CLI
-to load the hook.
+The installer shows the plan, then asks:
+
+1. If your `rules.json` differs from the new defaults: `Replace your rules.json with the new defaults? [y/N]`. Default keeps yours and writes the new defaults to `rules.default.json`. Replacing backs up yours to `rules.json.bak-<timestamp>`.
+2. If `command-guard.json` differs: `Replace the existing command-guard.json? [Y/n]`. Replacing backs up the old one to `command-guard.json.bak-<timestamp>`.
+3. Rule checklist. Every rule is listed with `[x]` if enabled. Rules are enabled by default (or as you left them on a re-install). Move with Up/Down or Tab, press Space to toggle the highlighted rule, then press Enter to confirm.
+4. `Enabled rules: N of M` and `Apply these changes? [Y/n]`. `n` changes nothing.
+
+Toggling writes `enabled` in the installed `rules.json`. Without a terminal (piped or redirected input) the installer refuses to run unless you pass `-Yes`. With `-Yes` it skips all prompts, keeps the current rule flags, and accepts the defaults above. Re-running with nothing to change is a no-op. Restart Copilot CLI to load the hook.
 
 ## Uninstall
 

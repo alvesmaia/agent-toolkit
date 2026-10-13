@@ -25,6 +25,19 @@ Hooks are not skills and live outside `skills/`:
 |---|---|
 | [`command-guard`](copilot-hooks/command-guard/) | GitHub Copilot CLI `preToolUse` hook that denies commands and script writes matching patterns that trigger endpoint antivirus (`irm ... \| iex`, `-EncodedCommand`, `-ExecutionPolicy Bypass`, ...). Installs with a PowerShell script; see its README for limits. |
 
+### Installing only the hooks
+
+Requires git and Windows PowerShell. Downloads only the hook folder, not the skills:
+
+```powershell
+git clone --filter=blob:none --sparse https://github.com/alvesmaia/agent-toolkit.git
+cd agent-toolkit
+git sparse-checkout set copilot-hooks/command-guard
+powershell -NoProfile -File copilot-hooks\command-guard\install.ps1
+```
+
+Restart Copilot CLI to load it. To remove it, run `copilot-hooks\command-guard\uninstall.ps1` with the same command.
+
 ## Installing
 
 ### As a plugin (recommended)

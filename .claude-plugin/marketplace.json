@@ -13,6 +13,14 @@
         "name": "Uemerson Maia"
       },
       "source": "./"
+    },
+    {
+      "name": "tasks-panel",
+      "description": "Live progress panel for the plan tracked in TASKS.md",
+      "author": {
+        "name": "Uemerson Maia"
+      },
+      "source": "./mods/tasks-panel"
     }
   ]
 }

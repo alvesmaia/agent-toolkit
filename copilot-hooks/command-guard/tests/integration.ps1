@@ -27,7 +27,7 @@ $log = Join-Path $copilotHome 'hooks\command-guard\guard.log'
 $failed = $false
 
 try {
-    & (Join-Path $root 'install.ps1') -CopilotHome $copilotHome | Out-Null
+    & (Join-Path $root 'install.ps1') -CopilotHome $copilotHome -Yes | Out-Null
     $env:COPILOT_HOME = $copilotHome
     $env:COPILOT_GITHUB_TOKEN = (gh auth token)
 

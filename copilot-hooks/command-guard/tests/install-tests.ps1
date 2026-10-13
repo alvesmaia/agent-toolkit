@@ -3,6 +3,7 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $root = Split-Path -Parent $here
 $install = Join-Path $root 'install.ps1'
 $uninstall = Join-Path $root 'uninstall.ps1'
+$exe = (Get-Process -Id $PID).Path
 $copilotHome = Join-Path ([IO.Path]::GetTempPath()) ('guard-home-' + [guid]::NewGuid().ToString('N'))
 $hooks = Join-Path $copilotHome 'hooks'
 $failures = 0
@@ -19,11 +20,18 @@ function Get-Hash([string]$path) {
 
 try {
     New-Item -ItemType Directory -Path $hooks -Force | Out-Null
+    $refusedHome = Join-Path $copilotHome "refused"
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    $null | & $exe -NoProfile -File $install -CopilotHome $refusedHome 2>&1 | Out-Null
+    $refusedExit = $LASTEXITCODE
+    $ErrorActionPreference = $previousPreference
+    Assert ($refusedExit -ne 0 -and -not (Test-Path -LiteralPath (Join-Path $refusedHome "hooks"))) "non-interactive run without -Yes refuses and writes nothing"
     $other = Join-Path $hooks 'other.json'
     [IO.File]::WriteAllText($other, '{"version":1,"hooks":{"preToolUse":[{"type":"command","powershell":"exit 0","timeoutSec":5}]}}')
     $otherHash = Get-Hash $other
 
-    & $install -CopilotHome $copilotHome | Out-Null
+    & $install -CopilotHome $copilotHome -Yes | Out-Null
     $config = Join-Path $hooks 'command-guard.json'
     Assert (Test-Path -LiteralPath (Join-Path $hooks 'command-guard\guard.ps1')) 'install copies guard.ps1'
     Assert (Test-Path -LiteralPath (Join-Path $hooks 'command-guard\rules.json')) 'install copies rules.json'
@@ -33,20 +41,23 @@ try {
     $parsed = Get-Content -LiteralPath $config -Raw | ConvertFrom-Json
     Assert ($parsed.version -eq 1 -and $parsed.hooks.preToolUse[0].timeoutSec -eq 30) 'config has version 1 and timeoutSec 30'
 
-    & $install -CopilotHome $copilotHome | Out-Null
+    & $install -CopilotHome $copilotHome -Yes | Out-Null
     Assert ((Get-Hash $config) -eq $configHash) 'second install is idempotent'
     Assert (@(Get-ChildItem -LiteralPath $hooks -Filter 'command-guard.json.bak-*').Count -eq 0) 'second install creates no backup'
 
     [IO.File]::WriteAllText($config, '{"version":2}')
-    & $install -CopilotHome $copilotHome | Out-Null
+    & $install -CopilotHome $copilotHome -Yes | Out-Null
     Assert (@(Get-ChildItem -LiteralPath $hooks -Filter 'command-guard.json.bak-*').Count -eq 1) 'changed config is backed up before rewrite'
     Assert ((Get-Hash $config) -eq $configHash) 'changed config is restored to expected content'
 
     $userRules = Join-Path $hooks 'command-guard\rules.json'
-    Add-Content -LiteralPath $userRules -Value ' '
-    $userRulesHash = Get-Hash $userRules
-    & $install -CopilotHome $copilotHome | Out-Null
-    Assert ((Get-Hash $userRules) -eq $userRulesHash) 'user edits to rules.json are preserved'
+    $edited = Get-Content -LiteralPath $userRules -Raw -Encoding UTF8 | ConvertFrom-Json
+    $edited.rules[0].message = 'custom message'
+    $edited.rules[1].enabled = $false
+    [IO.File]::WriteAllText($userRules, ($edited | ConvertTo-Json -Depth 10), (New-Object System.Text.UTF8Encoding $false))
+    & $install -CopilotHome $copilotHome -Yes | Out-Null
+    $kept = Get-Content -LiteralPath $userRules -Raw -Encoding UTF8 | ConvertFrom-Json
+    Assert ($kept.rules[0].message -eq 'custom message' -and $kept.rules[1].enabled -eq $false) 'user edits to rules.json are preserved'
     Assert (Test-Path -LiteralPath (Join-Path $hooks 'command-guard\rules.default.json')) 'latest defaults written to rules.default.json'
 
     & $uninstall -CopilotHome $copilotHome | Out-Null

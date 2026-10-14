@@ -30,15 +30,23 @@ const COLOR: Record<Status, string> = {
   needs: 'suggestion',
 }
 
+// Paths hang off the session's project root, not the working directory: a shell `cd` into a
+// subfolder must not make the board disappear ("No TASKS.md in this directory").
+async function at($: EngineInterface, rel: string): Promise<string> {
+  return `${(await $.session.root()).replace(/[\\/]+$/, '')}/${rel}`
+}
+
 async function loadDetails($: EngineInterface): Promise<Record<string, string>> {
-  for (const path of DETAIL_FILES) {
+  for (const rel of DETAIL_FILES) {
+    const path = await at($, rel)
     if (await $.fs.exists(path)) return parseDetails(await $.fs.read(path))
   }
   return {}
 }
 
 async function refresh($: EngineInterface): Promise<void> {
-  const stat = await $.fs.stat(FILE).catch(() => undefined)
+  const file = await at($, FILE)
+  const stat = await $.fs.stat(file).catch(() => undefined)
   if (!stat) {
     await update($, board, () => null)
     await update($, mtime, () => 0)
@@ -46,7 +54,7 @@ async function refresh($: EngineInterface): Promise<void> {
   }
   if (stat.mtimeMs === (await read($, mtime))) return
 
-  const text = await $.fs.read(FILE)
+  const text = await $.fs.read(file)
   const found = await loadDetails($)
   await update($, board, () => parseBoard(text))
   await update($, details, () => found)
@@ -114,7 +122,7 @@ export const register: Register = on => {
     if (!current) {
       return (
         <Box flexDirection="column">
-          <Text dimColor>No {FILE} in this directory.</Text>
+          <Text dimColor>No {FILE} in the project root.</Text>
         </Box>
       )
     }

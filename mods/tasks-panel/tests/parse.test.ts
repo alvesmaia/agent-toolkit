@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { parseBoard, parseDetails } from '../hooks/parse'
+import { isPhaseRunning, isTaskRunning, parseBoard, parseDetails } from '../hooks/parse'
 
 test('reads title, phases and tasks', () => {
   const board = parseBoard(
@@ -42,4 +42,26 @@ test('reads detail text under each task heading', () => {
 
   expect(details['13']).toBe('Stores what is installed.')
   expect(details['99']).toBe(undefined)
+})
+
+test('a running sub-step marks its task and section as running', () => {
+  const board = parseBoard(
+    [
+      '# Plan',
+      '## Phase A',
+      '- ⬜ 1 · parent',
+      '  - ▶️ 1.1 · running child',
+      '- ⬜ 2 · idle',
+      '## Phase B',
+      '- ▶️ 3 · running task',
+      '## Phase C',
+      '- ⬜ 4 · idle',
+    ].join('\n'),
+  )
+  const [a, b, c] = board.phases
+
+  expect(a?.tasks.map(isTaskRunning)).toEqual([true, false])
+  expect(b?.tasks.map(isTaskRunning)).toEqual([true])
+  expect(board.phases.map(isPhaseRunning)).toEqual([true, true, false])
+  expect(c && isPhaseRunning(c)).toBe(false)
 })

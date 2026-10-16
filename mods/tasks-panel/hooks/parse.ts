@@ -88,3 +88,13 @@ export function parseDetails(text: string): Record<string, string> {
 export function allTasks(board: Board): Task[] {
   return board.phases.flatMap(phase => phase.tasks)
 }
+
+// A running sub-step counts for its task, and a running task for its section, so a collapsed
+// row still shows where work is happening.
+export function isTaskRunning(task: Task): boolean {
+  return task.status === 'running' || task.children.some(child => child.status === 'running')
+}
+
+export function isPhaseRunning(phase: Phase): boolean {
+  return phase.tasks.some(isTaskRunning)
+}

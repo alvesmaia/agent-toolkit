@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Board, Phase, Status, Task } from '../types'
-import { allTasks, parseBoard, parseDetails } from './parse'
+import { allTasks, isPhaseRunning, isTaskRunning, parseBoard, parseDetails } from './parse'
 
 const PANE = 'tasks-panel'
 const FILE = 'TASKS.md'
@@ -61,10 +61,6 @@ async function refresh($: EngineInterface): Promise<void> {
   await update($, mtime, () => stat.mtimeMs)
 }
 
-function hasRunning(phase: Phase): boolean {
-  return phase.tasks.some(task => task.status === 'running')
-}
-
 function isOpen(open: Record<string, boolean>, key: string, fallback: boolean): boolean {
   return open[key] ?? fallback
 }
@@ -97,7 +93,7 @@ export const register: Register = on => {
     $.clock.every(1000, () => refresh($))
     $.clock.every(400, async () => {
       const current = await read($, board)
-      if (current && current.phases.some(hasRunning)) {
+      if (current && current.phases.some(isPhaseRunning)) {
         await update($, shimmer, n => n + 1)
       }
     })
@@ -137,20 +133,21 @@ export const register: Register = on => {
       const detail = detailsOf[String(task.num)]
       const isDetailOpen = isOpen(open, key, false)
       const label = `${NATIVE[task.status]} ${task.title}`
-      const isBright = task.status === 'running' && tick % 2 === 0
+      const isActive = isTaskRunning(task)
+      const text = (
+        <Text color={isActive ? COLOR.running : COLOR[task.status]} bold={isActive && tick % 2 === 0}>
+          {label}
+        </Text>
+      )
 
       return (
         <Box key={key} flexDirection="column">
           {detail === undefined ? (
-            <Text color={COLOR[task.status]} bold={isBright}>
-              {label}
-            </Text>
+            text
           ) : (
-            <Button
-              key={`b-${key}`}
-              label={label}
-              onPress={() => flip(key, isDetailOpen)}
-            />
+            <Button key={`b-${key}`} label={label} onPress={() => flip(key, isDetailOpen)}>
+              {isActive ? text : undefined}
+            </Button>
           )}
           {detail !== undefined && isDetailOpen && <Text dimColor>{detail}</Text>}
           {(task.children ?? []).map((child, i) => (
@@ -166,16 +163,20 @@ export const register: Register = on => {
 
     const renderPhase = (phase: Phase) => {
       const key = `p:${phase.title}`
-      const isPhaseOpen = isOpen(open, key, hasRunning(phase))
+      const isActive = isPhaseRunning(phase)
+      const isPhaseOpen = isOpen(open, key, isActive)
       const done = phase.tasks.filter(task => task.status === 'done').length
+      const label = `${isPhaseOpen ? '▾' : '▸'} ${phase.title} (${done}/${phase.tasks.length})`
 
       return (
         <Box key={key} flexDirection="column">
-          <Button
-            key={`b-${key}`}
-            label={`${isPhaseOpen ? '▾' : '▸'} ${phase.title} (${done}/${phase.tasks.length})`}
-            onPress={() => flip(key, isPhaseOpen)}
-          />
+          <Button key={`b-${key}`} label={label} onPress={() => flip(key, isPhaseOpen)}>
+            {isActive ? (
+              <Text color={COLOR.running} bold={tick % 2 === 0}>
+                {label}
+              </Text>
+            ) : undefined}
+          </Button>
           {isPhaseOpen && (
             <Box flexDirection="column" marginLeft={2}>
               {phase.tasks.map(renderTask)}

@@ -128,11 +128,16 @@ export const register: Register = on => {
     const flip = (key: string, value: boolean) =>
       update($, toggles, o => ({ ...o, [key]: !value }))
 
+    // descriptions start collapsed; the header button opens or closes all of them at once
+    const allOpen = isOpen(open, 'all', false)
+    const mark = (has: boolean, isShown: boolean) => (has ? (isShown ? ' ▾' : ' ▸') : '')
+
     const renderTask = (task: Task) => {
       const key = `t:${task.num}`
-      const detail = detailsOf[String(task.num)]
-      const isDetailOpen = isOpen(open, key, false)
-      const label = `${NATIVE[task.status]} ${task.title}`
+      const notes = detailsOf[String(task.num)]
+      const detail = [task.detail, notes].filter(Boolean).join('\n') || undefined
+      const isDetailOpen = isOpen(open, key, allOpen)
+      const label = `${NATIVE[task.status]} ${task.title}${mark(detail !== undefined, isDetailOpen)}`
       const isActive = isTaskRunning(task)
       const text = (
         <Text color={isActive ? COLOR.running : COLOR[task.status]} bold={isActive && tick % 2 === 0}>
@@ -150,13 +155,28 @@ export const register: Register = on => {
             </Button>
           )}
           {detail !== undefined && isDetailOpen && <Text dimColor>{detail}</Text>}
-          {(task.children ?? []).map((child, i) => (
-            <Box key={`${key}-c-${i}`} marginLeft={2}>
-              <Text color={child.status ? COLOR[child.status] : 'inactive'}>
-                {child.status ? NATIVE[child.status] : '•'} {child.title}
-              </Text>
-            </Box>
-          ))}
+          {(task.children ?? []).map((child, i) => {
+            const ckey = `c:${task.num}:${i}`
+            const isChildOpen = isOpen(open, ckey, allOpen)
+            const clabel = `${child.status ? NATIVE[child.status] : '•'} ${child.title}${mark(child.detail !== undefined, isChildOpen)}`
+            const ctext = <Text color={child.status ? COLOR[child.status] : 'inactive'}>{clabel}</Text>
+            return (
+              <Box key={`${key}-c-${i}`} marginLeft={2} flexDirection="column">
+                {child.detail === undefined ? (
+                  ctext
+                ) : (
+                  <Button key={`b-${ckey}`} label={clabel} onPress={() => flip(ckey, isChildOpen)}>
+                    {ctext}
+                  </Button>
+                )}
+                {child.detail !== undefined && isChildOpen && (
+                  <Box marginLeft={2}>
+                    <Text dimColor>{child.detail}</Text>
+                  </Box>
+                )}
+              </Box>
+            )
+          })}
         </Box>
       )
     }
@@ -193,6 +213,16 @@ export const register: Register = on => {
         <Text dimColor>
           {NATIVE.done} {count('done')}  {NATIVE.running} {count('running')}  {NATIVE.todo} {count('todo')}
         </Text>
+        <Button
+          key="b-all"
+          label={allOpen ? '▾ descrições: abertas' : '▸ descrições: recolhidas'}
+          onPress={() =>
+            update($, toggles, o => ({
+              ...Object.fromEntries(Object.entries(o).filter(([k]) => k.startsWith('p:'))),
+              all: !allOpen,
+            }))
+          }
+        />
         {current.phases.map(renderPhase)}
       </Box>
     )

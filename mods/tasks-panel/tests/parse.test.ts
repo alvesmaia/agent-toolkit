@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { isPhaseRunning, isTaskRunning, parseBoard, parseDetails } from '../hooks/parse'
+import { isPhaseRunning, isTaskRunning, parseBoard, parseDetails, splitTitle } from '../hooks/parse'
 
 test('reads title, phases and tasks', () => {
   const board = parseBoard(
@@ -64,4 +64,17 @@ test('a running sub-step marks its task and section as running', () => {
   expect(b?.tasks.map(isTaskRunning)).toEqual([true])
   expect(board.phases.map(isPhaseRunning)).toEqual([true, true, false])
   expect(c && isPhaseRunning(c)).toBe(false)
+})
+
+test('splits a line into a short title and its description', () => {
+  expect(splitTitle('som: YM2610 do ymfm')).toEqual({ title: 'som', detail: 'YM2610 do ymfm' })
+  expect(splitTitle('Caminho D — port nativo')).toEqual({ title: 'Caminho D', detail: 'port nativo' })
+  expect(splitTitle('modelo maior (1,17 KO)')).toEqual({ title: 'modelo maior', detail: '(1,17 KO)' })
+  expect(splitTitle('A: título curto não corta')).toEqual({ title: 'A: título curto não corta' })
+  expect(splitTitle('sem separador')).toEqual({ title: 'sem separador' })
+  const board = parseBoard(['# P', '## F', '- ⬜ 1 · tarefa: detalhe', '  - ✅ som: ymfm'].join('\n'))
+  const task = board.phases[0]?.tasks[0]
+  expect(task?.title).toBe('tarefa')
+  expect(task?.detail).toBe('detalhe')
+  expect(task?.children[0]).toEqual({ status: 'done', title: 'som', detail: 'ymfm' })
 })

@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { Board, Phase, Status, Task } from '../types'
+import type { Board, Helper, Phase, Status, Task } from '../types'
 import { allTasks, isPhaseRunning, isTaskRunning, parseBoard, parseDetails } from './parse'
 
 const PANE = 'tasks-panel'
@@ -13,6 +13,22 @@ const details = atom({ plugin: 'tasks-panel', key: 'details-v2' } as const, {} a
 const mtime = atom({ plugin: 'tasks-panel', key: 'mtime-v2' } as const, 0)
 const toggles = atom({ plugin: 'tasks-panel', key: 'toggles' } as const, {} as Record<string, boolean>)
 const shimmer = atom({ plugin: 'tasks-panel', key: 'shimmer' } as const, 0)
+const helpers = atom({ plugin: 'tasks-panel', key: 'helpers' } as const, [] as Helper[])
+
+const HELPER_ICON: Record<string, [string, string]> = {
+  running: ['◼', 'warning'], pending: ['◼', 'warning'], waiting: ['◼', 'warning'], idle: ['☐', 'inactive'],
+  completed: ['☒', 'success'], failed: ['⛔', 'error'], killed: ['⛔', 'error'],
+}
+const isBusy = (agent: Helper) => ['running', 'pending', 'waiting'].includes(agent.status)
+
+// The session's subagents; finished ones stay listed (until the session ends) once seen.
+async function refreshHelpers($: EngineInterface): Promise<void> {
+  const now = await $.agent.list().catch(() => [])
+  const seen = await read($, helpers)
+  const next: Helper[] = now.map(a => ({ id: a.id, description: a.description, type: a.type, status: a.status }))
+  for (const old of seen) if (!next.some(a => a.id === old.id)) next.push(isBusy(old) ? { ...old, status: 'completed' } : old)
+  if (JSON.stringify(next) !== JSON.stringify(seen)) await update($, helpers, () => next)
+}
 
 const NATIVE: Record<Status, string> = {
   done: '☒',
@@ -68,7 +84,9 @@ function isOpen(open: Record<string, boolean>, key: string, fallback: boolean): 
 const INSTRUCTION = [
   'When you execute a multi-task plan in this repository, track it in TASKS.md at the repository root.',
   'Write one line per task: "- ⬜ N · title" when pending, "- ▶️ N · title" when running, "- ✅ N · title" when done, "- ⛔ N · title" when blocked. Indent sub-steps under their task with two spaces and "- ".',
-  'Update TASKS.md in the same commit that closes each task. Do not edit it while a subagent works in the repository.',
+  'Update TASKS.md in the same commit that closes each task.',
+  'Only the main agent edits TASKS.md, at any time, also while subagents run; never ask a subagent to edit it.',
+  'When you delegate a step to a subagent, mark its line ▶️ and end it with "subagente: <the Agent call description>" so the panel links them; update the line when the subagent reports.',
   'Put longer notes in docs/task-details.md as "✅ **Task N — title**" followed by the text.',
   'The tasks panel shows TASKS.md live.',
 ].join('\n')
@@ -91,9 +109,10 @@ export const register: Register = on => {
     if (await read($, board)) void $.ui.open({ id: PANE, title: 'Tasks' })
 
     $.clock.every(1000, () => refresh($))
+    $.clock.every(1000, () => refreshHelpers($))
     $.clock.every(400, async () => {
       const current = await read($, board)
-      if (current && current.phases.some(isPhaseRunning)) {
+      if ((current && current.phases.some(isPhaseRunning)) || (await read($, helpers)).some(isBusy)) {
         await update($, shimmer, n => n + 1)
       }
     })
@@ -103,6 +122,7 @@ export const register: Register = on => {
 
   on('command.run', { command: 'tasks-panel' }, async $ => {
     await refresh($)
+    await refreshHelpers($)
     await $.ui.open({ id: PANE, title: 'Tasks' })
 
     return { text: 'Tasks panel opened.' }
@@ -114,6 +134,10 @@ export const register: Register = on => {
     const open = await read($, toggles)
     const tick = await read($, shimmer)
     const detailsOf = await read($, details)
+    const agents = await read($, helpers)
+    // a line delegated to a running subagent names its description ("subagente: <description>")
+    const delegated = (text: string) =>
+      agents.some(a => isBusy(a) && a.description && text.toLowerCase().includes(a.description.toLowerCase()))
 
     if (!current) {
       return (
@@ -137,7 +161,8 @@ export const register: Register = on => {
       const notes = detailsOf[String(task.num)]
       const detail = [task.detail, notes].filter(Boolean).join('\n') || undefined
       const isDetailOpen = isOpen(open, key, allOpen)
-      const label = `${NATIVE[task.status]} ${task.title}${mark(detail !== undefined, isDetailOpen)}`
+      const own = `${task.title} ${task.detail ?? ''}`
+      const label = `${NATIVE[task.status]} ${task.title}${delegated(own) ? ' ⇢' : ''}${mark(detail !== undefined, isDetailOpen)}`
       const isActive = isTaskRunning(task)
       const text = (
         <Text color={isActive ? COLOR.running : COLOR[task.status]} bold={isActive && tick % 2 === 0}>
@@ -158,7 +183,8 @@ export const register: Register = on => {
           {(task.children ?? []).map((child, i) => {
             const ckey = `c:${task.num}:${i}`
             const isChildOpen = isOpen(open, ckey, allOpen)
-            const clabel = `${child.status ? NATIVE[child.status] : '•'} ${child.title}${mark(child.detail !== undefined, isChildOpen)}`
+            const isDelegated = delegated(`${child.title} ${child.detail ?? ''}`)
+            const clabel = `${child.status ? NATIVE[child.status] : '•'} ${child.title}${isDelegated ? ' ⇢' : ''}${mark(child.detail !== undefined, isChildOpen)}`
             const ctext = <Text color={child.status ? COLOR[child.status] : 'inactive'}>{clabel}</Text>
             return (
               <Box key={`${key}-c-${i}`} marginLeft={2} flexDirection="column">
@@ -177,6 +203,28 @@ export const register: Register = on => {
               </Box>
             )
           })}
+        </Box>
+      )
+    }
+
+    const renderHelpers = () => {
+      const key = 'p:subagentes'
+      const busy = agents.filter(isBusy).length
+      const isShown = isOpen(open, key, busy > 0)
+      const label = `${isShown ? '▾' : '▸'} Subagentes (${busy} rodando, ${agents.length - busy} encerrados)`
+      return (
+        <Box key={key} flexDirection="column">
+          <Button key={`b-${key}`} label={label} onPress={() => flip(key, isShown)}>
+            {busy > 0 ? <Text color={COLOR.running} bold={tick % 2 === 0}>{label}</Text> : undefined}
+          </Button>
+          {isShown && (
+            <Box flexDirection="column" marginLeft={2}>
+              {agents.map(agent => {
+                const [icon, color] = HELPER_ICON[agent.status] ?? ['•', 'inactive']
+                return <Text key={`h-${agent.id}`} color={color}>{icon} {agent.description} · {agent.type}</Text>
+              })}
+            </Box>
+          )}
         </Box>
       )
     }
@@ -223,6 +271,7 @@ export const register: Register = on => {
             }))
           }
         />
+        {agents.length > 0 && renderHelpers()}
         {current.phases.map(renderPhase)}
       </Box>
     )

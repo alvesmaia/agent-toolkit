@@ -9,6 +9,9 @@ export type Phase = { title: string; tasks: Task[] }
 
 export type Board = { title: string; phases: Phase[] }
 
+// a subagent of this session, as $.agent.list() reports it
+export type Helper = { id: string; description: string; type: string; status: string }
+
 declare module 'claude-code' {
   interface PluginState {
     'tasks-panel': {
@@ -17,6 +20,7 @@ declare module 'claude-code' {
       'mtime-v2': number
       toggles: Record<string, boolean>
       shimmer: number
+      helpers: Helper[]
     }
   }
 }

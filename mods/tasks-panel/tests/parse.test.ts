@@ -32,6 +32,7 @@ test('nests indented lines under their task', () => {
 
   expect(first?.children.map(child => child.title)).toEqual(['child done', 'plain child'])
   expect(first?.children[0]?.status).toBe('done')
+  expect(first?.children.map(child => child.num)).toEqual(['1.1', undefined])
   expect(board.phases[0]?.tasks[1]?.children.length).toBe(0)
 })
 

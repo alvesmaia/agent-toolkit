@@ -34,7 +34,8 @@ function parseChild(text: string): Child {
   const first = text.split(' ')[0] ?? ''
   const status = statusOf(first)
   const rest = status ? text.slice(first.length).trim() : text
-  return { status, ...splitTitle(rest.replace(/^[\d.]+\s+·\s+/, '')) }
+  const num = rest.match(/^([\d.]+)\s+·\s+/)
+  return { status, ...(num ? { num: num[1] } : {}), ...splitTitle(num ? rest.slice(num[0].length) : rest) }
 }
 
 export function parseBoard(text: string): Board {

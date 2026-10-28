@@ -162,7 +162,7 @@ export const register: Register = on => {
       const detail = [task.detail, notes].filter(Boolean).join('\n') || undefined
       const isDetailOpen = isOpen(open, key, allOpen)
       const own = `${task.title} ${task.detail ?? ''}`
-      const label = `${NATIVE[task.status]} ${task.title}${delegated(own) ? ' ⇢' : ''}${mark(detail !== undefined, isDetailOpen)}`
+      const label = `${NATIVE[task.status]} ${task.num} ${task.title}${delegated(own) ? ' ⇢' : ''}${mark(detail !== undefined, isDetailOpen)}`
       const isActive = isTaskRunning(task)
       const text = (
         <Text color={isActive ? COLOR.running : COLOR[task.status]} bold={isActive && tick % 2 === 0}>
@@ -184,7 +184,7 @@ export const register: Register = on => {
             const ckey = `c:${task.num}:${i}`
             const isChildOpen = isOpen(open, ckey, allOpen)
             const isDelegated = delegated(`${child.title} ${child.detail ?? ''}`)
-            const clabel = `${child.status ? NATIVE[child.status] : '•'} ${child.title}${isDelegated ? ' ⇢' : ''}${mark(child.detail !== undefined, isChildOpen)}`
+            const clabel = `${child.status ? NATIVE[child.status] : '•'} ${child.num ? `${child.num} ` : ''}${child.title}${isDelegated ? ' ⇢' : ''}${mark(child.detail !== undefined, isChildOpen)}`
             const ctext = <Text color={child.status ? COLOR[child.status] : 'inactive'}>{clabel}</Text>
             return (
               <Box key={`${key}-c-${i}`} marginLeft={2} flexDirection="column">

@@ -1,6 +1,6 @@
 {
   "name": "tasks-panel",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Live progress panel for the plan tracked in TASKS.md",
   "author": { "name": "Uemerson Maia" },
   "types": "./types/index.d.ts"

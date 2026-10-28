@@ -1,7 +1,7 @@
 export type Status = 'done' | 'running' | 'todo' | 'blocked' | 'needs'
 
 // title = text up to the first separator; detail = the rest (shown when expanded)
-export type Child = { status: Status | null; num?: string; title: string; detail?: string }
+export type Child = { status: Status | null; num?: string; depth?: number; title: string; detail?: string }
 
 export type Task = { num: number; status: Status; title: string; detail?: string; children: Child[] }
 

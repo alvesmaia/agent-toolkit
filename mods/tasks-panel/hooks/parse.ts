@@ -30,12 +30,12 @@ export function splitTitle(text: string): { title: string; detail?: string } {
   return detail ? { title: text.slice(0, cut).trim(), detail } : { title: text }
 }
 
-function parseChild(text: string): Child {
+function parseChild(text: string, depth = 1): Child {
   const first = text.split(' ')[0] ?? ''
   const status = statusOf(first)
   const rest = status ? text.slice(first.length).trim() : text
   const num = rest.match(/^([\d.]+)\s+·\s+/)
-  return { status, ...(num ? { num: num[1] } : {}), ...splitTitle(num ? rest.slice(num[0].length) : rest) }
+  return { status, depth, ...(num ? { num: num[1] } : {}), ...splitTitle(num ? rest.slice(num[0].length) : rest) }
 }
 
 export function parseBoard(text: string): Board {
@@ -59,9 +59,9 @@ export function parseBoard(text: string): Board {
       continue
     }
 
-    const child = line.match(/^\s+- (.*)$/)
-    if (child) {
-      last?.children.push(parseChild(child[1] ?? ''))
+    const child = line.match(/^(\s+)- (.*)$/)
+    if (child) {   // 2 espaços por nível: '  - ' = 1, '    - ' = 2
+      last?.children.push(parseChild(child[2] ?? '', Math.max(1, Math.floor((child[1] ?? '').length / 2))))
       continue
     }
 

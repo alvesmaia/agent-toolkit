@@ -33,6 +33,8 @@ test('nests indented lines under their task', () => {
   expect(first?.children.map(child => child.title)).toEqual(['child done', 'plain child'])
   expect(first?.children[0]?.status).toBe('done')
   expect(first?.children.map(child => child.num)).toEqual(['1.1', undefined])
+  const deep = parseBoard(['# P', '## F', '- ⬜ 1 · a', '  - ⬜ 1.1 · b', '    - ⬜ 1.1.1 · c'].join('\n'))
+  expect(deep.phases[0]?.tasks[0]?.children.map(c => c.depth)).toEqual([1, 2])
   expect(board.phases[0]?.tasks[1]?.children.length).toBe(0)
 })
 
@@ -77,5 +79,5 @@ test('splits a line into a short title and its description', () => {
   const task = board.phases[0]?.tasks[0]
   expect(task?.title).toBe('tarefa')
   expect(task?.detail).toBe('detalhe')
-  expect(task?.children[0]).toEqual({ status: 'done', title: 'som', detail: 'ymfm' })
+  expect(task?.children[0]).toEqual({ status: 'done', depth: 1, title: 'som', detail: 'ymfm' })
 })

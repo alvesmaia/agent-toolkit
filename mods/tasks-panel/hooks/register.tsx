@@ -187,7 +187,7 @@ export const register: Register = on => {
             const clabel = `${child.status ? NATIVE[child.status] : '•'} ${child.num ? `${child.num} ` : ''}${child.title}${isDelegated ? ' ⇢' : ''}${mark(child.detail !== undefined, isChildOpen)}`
             const ctext = <Text color={child.status ? COLOR[child.status] : 'inactive'}>{clabel}</Text>
             return (
-              <Box key={`${key}-c-${i}`} marginLeft={2} flexDirection="column">
+              <Box key={`${key}-c-${i}`} marginLeft={2 * (child.depth ?? 1)} flexDirection="column">
                 {child.detail === undefined ? (
                   ctext
                 ) : (

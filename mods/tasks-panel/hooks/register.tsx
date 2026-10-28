@@ -8,9 +8,10 @@ const PANE = 'tasks-panel'
 const FILE = 'TASKS.md'
 const DETAIL_FILES = ['docs/task-details.md', 'docs/historico-implementacao.md']
 
-const board = atom({ plugin: 'tasks-panel', key: 'board-v2' } as const, null as Board | null)
-const details = atom({ plugin: 'tasks-panel', key: 'details-v2' } as const, {} as Record<string, string>)
-const mtime = atom({ plugin: 'tasks-panel', key: 'mtime-v2' } as const, 0)
+// -v3: o parser passou a guardar o número e a profundidade dos subitens; chave nova = o quadro é relido depois de atualizar
+const board = atom({ plugin: 'tasks-panel', key: 'board-v3' } as const, null as Board | null)
+const details = atom({ plugin: 'tasks-panel', key: 'details-v3' } as const, {} as Record<string, string>)
+const mtime = atom({ plugin: 'tasks-panel', key: 'mtime-v3' } as const, 0)
 const toggles = atom({ plugin: 'tasks-panel', key: 'toggles' } as const, {} as Record<string, boolean>)
 const shimmer = atom({ plugin: 'tasks-panel', key: 'shimmer' } as const, 0)
 const helpers = atom({ plugin: 'tasks-panel', key: 'helpers' } as const, [] as Helper[])
